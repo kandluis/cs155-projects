@@ -58,3 +58,5 @@ dkms.conf
 **/target[0-9]
 **/sploit[0-9]
 **/extra-credit
+**/run-shellcode
+*.bin
