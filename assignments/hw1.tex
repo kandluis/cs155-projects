@@ -1,0 +1,56 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage,enumitem,amsmath,amssymb,graphicx}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{bbm}
+
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+\begin{document}
+
+\begin{center}
+{\Large CS 155 Spring 2018 Homework 1}
+
+\begin{tabular}{rl}
+SUNet ID: & 05794739 \\
+Name: & Luis Perez \\
+Collaborators: & \\
+Late Days: & 0
+\end{tabular}
+\end{center}
+
+By turning in this assignment, I agree by the Stanford honor code and declare
+that all of this is my own work.
+
+\section*{Problem 1}
+Elizabeth can make the vulnerable application write the value 0x2222 to memory address 0x8888 by setting the values as specified in the tables below:
+
+\begin{table}[!h]
+\centering
+\caption{Registers}
+\label{table:registers}
+\begin{tabular}{|l|l|}
+\hline
+ecx & 0x3000 \\ \hline
+edx & 0x9000 \\ \hline
+eip & 0x4000 \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[!h]
+\centering
+\caption{Stack}
+\label{table:stack}
+\begin{tabular}{|l|l|}
+\hline
+0x9000 &        \\ \hline
+0x9004 & 0x2222 \\ \hline
+0x9008 & 0x5000 \\ \hline
+0x900c & 0x4000 \\ \hline
+0x9010 & 0x8888 \\ \hline
+0x9014 & 0x6000 \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}

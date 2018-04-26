@@ -62,3 +62,16 @@ dkms.conf
 *.bin
 
 *.tar.gz
+
+# Project 1 files that we don't care about.
+proj1/fuzz/install/*
+proj1/fuzz/libarchive-3.1.2/*
+proj1/fuzz/results/*
+
+# Tex files.
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+*.synctex.gz
