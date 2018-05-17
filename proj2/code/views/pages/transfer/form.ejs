@@ -14,6 +14,7 @@
 
   <label for="quantity">Amount</label>
   <input type="text" name="quantity" value="<%= result.amount %>"/>
+  <input type="hidden" name="token" value="<%- result.token %>"/>
 
   <p><input type="submit" class="pure-button button-primary" value="Transfer" /></p>
 </form>

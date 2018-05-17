@@ -4,6 +4,41 @@ import sqlite from 'sqlite';
 import { asyncMiddleware } from './utils/asyncMiddleware';
 import { generateRandomness, HMAC, KDF, checkPassword } from './utils/crypto';
 
+// Secret key to use for signing messages.
+const kServerSecretKey = generateRandomness();
+
+// Generates a token to protect against Cross Site Request Forgery by embedding
+// the token into forms and verifying it when processing the input.
+function generateTransactionToken(session) {
+  return HMAC(kServerSecretKey, session.username + session.hashedPassword + session.salt);
+}
+
+// Signs the input session and stores the signature in session.signature.
+function signSession(session) {
+  console.log("signing session: " + session);
+  const sess = JSON.parse(JSON.stringify(session));
+  sess.signature = "";
+  session.signature = HMAC(kServerSecretKey, JSON.stringify(sess));
+  return session;
+}
+
+// Verifies the session is signed and valid.
+function isValidSession(session) {
+  console.log("validating session: " + session);
+  if (session.loggedIn == false) {
+    console.log("valid -- not logged in!");
+    return true;
+  }
+  const sess = JSON.parse(JSON.stringify(session));
+  sess.signature = "";
+  if (HMAC(kServerSecretKey, JSON.stringify(sess)) == session.signature) {
+    console.log("valid!");
+    return true;
+  }
+  console.log("invalid!");
+  return false;
+}
+
 // The function works by escaping all potentially malicious characters.
 // Source: https://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript/4835406#4835406
 function escapeHtml(text) {
@@ -35,19 +70,36 @@ function render(req, res, next, page, title, errorMsg = false, result = null) {
   );
 }
 
+// Redirects the user to the home page due to an invalid session!
+function invalidSession(req, res, next) {
+  req.session.loggedIn = false;
+  req.session.account = {};
+  render(req, res, next, 'index', 'Bitbar Home', "Invalid session detected!", {token: generateTransactionToken(req.session)});
+}
+
 
 router.get('/', (req, res, next) => {
-  render(req, res, next, 'index', 'Bitbar Home');
+  render(req, res, next, 'index', 'Bitbar Home', false, {token: generateTransactionToken(req.session)});
 });
 
 
 router.post('/set_profile', asyncMiddleware(async (req, res, next) => {
+  if(req.session.loggedIn == false) {
+    render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
+    return;
+  };
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
+  if (req.body.token != generateTransactionToken(req.session)) {
+    render(req, res, next, 'index', 'Bitbar Home', 'Something is amiss with updating your profile! Try again', {token: generateTransactionToken(req.session)});
+    return;
+  }
   req.session.account.profile = req.body.new_profile;
+  req.session = signSession(req.session);
   console.log(req.body.new_profile);
   const db = await dbPromise;
   const query = `UPDATE Users SET profile = ? WHERE username = "${req.session.account.username}";`;
   const result = await db.run(query, req.body.new_profile);
-  render(req, res, next, 'index', 'Bitbar Home');
+  render(req, res, next, 'index', 'Bitbar Home', false, {token: generateTransactionToken(req.session)});
 
 }));
 
@@ -65,6 +117,7 @@ router.post('/post_login', asyncMiddleware(async (req, res, next) => {
     if(checkPassword(req.body.password, result)) { // if password is valid
       req.session.loggedIn = true;
       req.session.account = result;
+      req.session = signSession(req.session);
       render(req, res, next, 'login/success', 'Bitbar Home');
       return;
     }
@@ -100,6 +153,7 @@ router.post('/post_register', asyncMiddleware(async (req, res, next) => {
     profile: '',
     bitbars: 100,
   };
+  req.session = signSession(req.session);
   render(req, res, next,'register/success', 'Bitbar Home');
 }));
 
@@ -109,18 +163,22 @@ router.get('/close', asyncMiddleware(async (req, res, next) => {
     render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
     return;
   };
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
   const db = await dbPromise;
   const query = `DELETE FROM Users WHERE username == "${req.session.account.username}";`;
   await db.get(query);
   req.session.loggedIn = false;
   req.session.account = {};
+  req.session.signature = "";
   render(req, res, next, 'index', 'Bitbar Home', 'Deleted account successfully!');
 }));
 
 
 router.get('/logout', (req, res, next) => {
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
   req.session.loggedIn = false;
   req.session.account = {};
+  req.session.signature = "";
   render(req, res, next, 'index', 'Bitbar Home', 'Logged out successfully!');
 });
 
@@ -130,7 +188,7 @@ router.get('/profile', asyncMiddleware(async (req, res, next) => {
     render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
     return;
   };
-
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
   if(req.query.username != null) { // if visitor makes a search query
     const db = await dbPromise;
     const query = `SELECT * FROM Users WHERE username == "${req.query.username}";`;
@@ -157,7 +215,9 @@ router.get('/transfer', (req, res, next) => {
     render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
     return;
   };
-  render(req, res, next, 'transfer/form', 'Transfer Bitbars', false, {receiver:null, amount:null});
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
+  render(req, res, next, 'transfer/form', 'Transfer Bitbars', false,
+    {receiver:null, amount:null, token: generateTransactionToken(req.session)});
 });
 
 
@@ -166,9 +226,14 @@ router.post('/post_transfer', asyncMiddleware(async(req, res, next) => {
     render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
     return;
   };
-
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
   if(req.body.destination_username === req.session.account.username) {
-    render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'You cannot send money to yourself!', {receiver:null, amount:null});
+    render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'You cannot send money to yourself!', {receiver:null, amount:null, token: generateTransactionToken(req.session)});
+    return;
+  }
+
+  if (req.body.token != generateTransactionToken(req.session)) {
+    render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'Something looks wrong with your submission! Please try again!', {receiver:null, amount:null, token: generateTransactionToken(req.session)});
     return;
   }
 
@@ -178,11 +243,12 @@ router.post('/post_transfer', asyncMiddleware(async(req, res, next) => {
   if(receiver) { // if user exists
     const amount = parseInt(req.body.quantity);
     if(Number.isNaN(amount) || amount > req.session.account.bitbars || amount < 1) {
-      render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'Invalid transfer amount!', {receiver:null, amount:null});
+      render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'Invalid transfer amount!', {receiver:null, amount:null, token: generateTransactionToken(req.session)});
       return;
     }
 
     req.session.account.bitbars -= amount;
+    req.session = signSession(req.session);
     query = `UPDATE Users SET bitbars = "${req.session.account.bitbars}" WHERE username == "${req.session.account.username}";`;
     await db.exec(query);
     const receiverNewBal = receiver.bitbars + amount;
@@ -190,7 +256,7 @@ router.post('/post_transfer', asyncMiddleware(async(req, res, next) => {
     await db.exec(query);
     render(req, res, next, 'transfer/success', 'Transfer Complete', false, {receiver, amount});
   } else { // user does not exist
-    render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'This user does not exist!', {receiver:null, amount:null});
+    render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'This user does not exist!', {receiver:null, amount:null, token: generateTransactionToken(req.session)});
   }
 }));
 
