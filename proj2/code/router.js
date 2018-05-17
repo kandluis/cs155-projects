@@ -4,6 +4,21 @@ import sqlite from 'sqlite';
 import { asyncMiddleware } from './utils/asyncMiddleware';
 import { generateRandomness, HMAC, KDF, checkPassword } from './utils/crypto';
 
+// The function works by escaping all potentially malicious characters.
+// Source: https://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript/4835406#4835406
+function escapeHtml(text) {
+  if (text == false) return false;
+  var map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 const router = express.Router();
 const dbPromise = sqlite.open('./db/database.sqlite', { cached: true });
 
@@ -11,10 +26,10 @@ function render(req, res, next, page, title, errorMsg = false, result = null) {
   res.render(
     'layout/template', {
       page,
-      title,
+      title: escapeHtml(title),
       loggedIn: req.session.loggedIn,
       account: req.session.account,
-      errorMsg,
+      errorMsg: escapeHtml(errorMsg),
       result,
     }
   );
