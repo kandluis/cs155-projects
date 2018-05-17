@@ -89,6 +89,7 @@ router.post('/set_profile', asyncMiddleware(async (req, res, next) => {
     return;
   };
   if (!isValidSession(req.session)) return invalidSession(req, res, next);
+  console.log(req.body);
   if (req.body.token != generateTransactionToken(req.session)) {
     render(req, res, next, 'index', 'Bitbar Home', 'Something is amiss with updating your profile! Try again', {token: generateTransactionToken(req.session)});
     return;

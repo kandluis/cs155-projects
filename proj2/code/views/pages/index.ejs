@@ -5,7 +5,7 @@
   <form class="pure-form pure-form-stacked" action="set_profile" method="post">
     <label for="new_profile">Your profile text</label>
     <textarea name="new_profile" rows="8" cols="50"><%= account.profile %></textarea>
-    <input type="hidden" value="<%- result.token %>"/>
+    <input name="token" type="hidden" value="<%- result.token %>"/>
     <p><input class="pure-button" type="submit" value="Update profile"></p>
   </form>
 
