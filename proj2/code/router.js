@@ -9,13 +9,12 @@ const kServerSecretKey = generateRandomness();
 
 // Generates a token to protect against Cross Site Request Forgery by embedding
 // the token into forms and verifying it when processing the input.
-function generateTransactionToken(session) {
+const generateTransactionToken = session => {
   return HMAC(kServerSecretKey, session.username + session.hashedPassword + session.salt);
 }
 
 // Signs the input session and stores the signature in session.signature.
-function signSession(session) {
-  console.log("signing session: " + session);
+const signSession = session => {
   const sess = JSON.parse(JSON.stringify(session));
   sess.signature = "";
   session.signature = HMAC(kServerSecretKey, JSON.stringify(sess));
@@ -23,25 +22,20 @@ function signSession(session) {
 }
 
 // Verifies the session is signed and valid.
-function isValidSession(session) {
-  console.log("validating session: " + session);
-  if (session.loggedIn == false) {
-    console.log("valid -- not logged in!");
-    return true;
-  }
+const isValidSession = session => {
   const sess = JSON.parse(JSON.stringify(session));
   sess.signature = "";
-  if (HMAC(kServerSecretKey, JSON.stringify(sess)) == session.signature) {
-    console.log("valid!");
-    return true;
-  }
-  console.log("invalid!");
-  return false;
+  return HMAC(kServerSecretKey, JSON.stringify(sess)) == session.signature;
+}
+
+// Only alphanumeric usernames are supported.
+const isValidUsername = username => {
+  return username.match(/^[a-z0-9]+$/i) !== null;
 }
 
 // The function works by escaping all potentially malicious characters.
 // Source: https://stackoverflow.com/questions/1787322/htmlspecialchars-equivalent-in-javascript/4835406#4835406
-function escapeHtml(text) {
+const escapeHtml = text => {
   if (text == false) return false;
   var map = {
     '&': '&amp;',
@@ -54,10 +48,22 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
+const cleanAccount = account => {
+  const newAccount = JSON.parse(JSON.stringify(account));
+  if (account == null) return account
+  if (account.profile != null) {
+    newAccount.profile = escapeHtml(account.profile);
+  }
+  if (account.username != null) {
+    newAccount.username = escapeHtml(account.username)
+  }
+  return newAccount;
+}
+
 const router = express.Router();
 const dbPromise = sqlite.open('./db/database.sqlite', { cached: true });
 
-function render(req, res, next, page, title, errorMsg = false, result = null) {
+const render = (req, res, next, page, title, errorMsg = false, result = null) => {
   res.render(
     'layout/template', {
       page,
@@ -65,41 +71,40 @@ function render(req, res, next, page, title, errorMsg = false, result = null) {
       loggedIn: req.session.loggedIn,
       account: req.session.account,
       errorMsg: escapeHtml(errorMsg),
-      result,
+      result: cleanAccount(result),
     }
   );
 }
 
 // Redirects the user to the home page due to an invalid session!
-function invalidSession(req, res, next) {
+const invalidSession = (req, res, next) => {
   req.session.loggedIn = false;
   req.session.account = {};
-  render(req, res, next, 'index', 'Bitbar Home', "Invalid session detected!", {token: generateTransactionToken(req.session)});
+  render(req, res, next, 'index', 'Bitbar Home', "Invalid session detected! Logging out for safety.", {token: null});
 }
 
-
 router.get('/', (req, res, next) => {
+  if (req.session.loggedIn == true && !isValidSession(req.session)) return invalidSession(req, res, next);
   render(req, res, next, 'index', 'Bitbar Home', false, {token: generateTransactionToken(req.session)});
 });
 
 
 router.post('/set_profile', asyncMiddleware(async (req, res, next) => {
+  if (!isValidSession(req.session)) return invalidSession(req, res, next);
   if(req.session.loggedIn == false) {
     render(req, res, next, 'login/form', 'Login', 'You must be logged in to use this feature!');
     return;
   };
-  if (!isValidSession(req.session)) return invalidSession(req, res, next);
-  console.log(req.body);
   if (req.body.token != generateTransactionToken(req.session)) {
     render(req, res, next, 'index', 'Bitbar Home', 'Something is amiss with updating your profile! Try again', {token: generateTransactionToken(req.session)});
     return;
   }
-  req.session.account.profile = req.body.new_profile;
+  req.session.account.profile = escapeHtml(req.body.new_profile);
   req.session = signSession(req.session);
   console.log(req.body.new_profile);
   const db = await dbPromise;
-  const query = `UPDATE Users SET profile = ? WHERE username = "${req.session.account.username}";`;
-  const result = await db.run(query, req.body.new_profile);
+  const query = `UPDATE Users SET profile = $profile WHERE username = $user;`;
+  const result = await db.run(query, {$profile: req.body.new_profile, $user: req.session.account.username});
   render(req, res, next, 'index', 'Bitbar Home', false, {token: generateTransactionToken(req.session)});
 
 }));
@@ -112,8 +117,8 @@ router.get('/login', (req, res, next) => {
 
 router.post('/post_login', asyncMiddleware(async (req, res, next) => {
   const db = await dbPromise;
-  const query = `SELECT * FROM Users WHERE username == "${req.body.username}";`;
-  const result = await db.get(query);
+  const query = `SELECT * FROM Users WHERE username == $user;`;
+  const result = await db.get(query, {$user: req.body.username});
   if(result) { // if this username actually exists
     if(checkPassword(req.body.password, result)) { // if password is valid
       req.session.loggedIn = true;
@@ -131,11 +136,14 @@ router.get('/register', (req, res, next) => {
   render(req, res, next, 'register/form', 'Register');
 });
 
-
 router.post('/post_register', asyncMiddleware(async (req, res, next) => {
+  if (!isValidUsername(req.body.username)) {
+    render(req, res, next, 'register/form', 'Register', "Usernames must be alphanumeric.");
+    return;
+  }
   const db = await dbPromise;
-  let query = `SELECT * FROM Users WHERE username == "${req.body.username}";`;
-  let result = await db.get(query);
+  let query = `SELECT * FROM Users WHERE username == $user;`;
+  let result = await db.get(query, {$user: req.body.username});
   if(result) { // query returns results
     if(result.username === req.body.username) { // if username exists
       render(req, res, next, 'register/form', 'Register', 'This username already exists!');
@@ -166,8 +174,8 @@ router.get('/close', asyncMiddleware(async (req, res, next) => {
   };
   if (!isValidSession(req.session)) return invalidSession(req, res, next);
   const db = await dbPromise;
-  const query = `DELETE FROM Users WHERE username == "${req.session.account.username}";`;
-  await db.get(query);
+  const query = `DELETE FROM Users WHERE username == $user;`;
+  await db.get(query, {$user: req.session.account.username});
   req.session.loggedIn = false;
   req.session.account = {};
   req.session.signature = "";
@@ -192,10 +200,10 @@ router.get('/profile', asyncMiddleware(async (req, res, next) => {
   if (!isValidSession(req.session)) return invalidSession(req, res, next);
   if(req.query.username != null) { // if visitor makes a search query
     const db = await dbPromise;
-    const query = `SELECT * FROM Users WHERE username == "${req.query.username}";`;
+    const query = `SELECT * FROM Users WHERE username == $user;`;
     let result;
     try {
-      result = await db.get(query);
+      result = await db.get(query, {$user: req.query.username});
     } catch(err) {
       result = false;
     }
@@ -239,8 +247,8 @@ router.post('/post_transfer', asyncMiddleware(async(req, res, next) => {
   }
 
   const db = await dbPromise;
-  let query = `SELECT * FROM Users WHERE username == "${req.body.destination_username}";`;
-  const receiver = await db.get(query);
+  let query = `SELECT * FROM Users WHERE username == $user;`;
+  const receiver = await db.get(query, {$user: req.body.destination_username});
   if(receiver) { // if user exists
     const amount = parseInt(req.body.quantity);
     if(Number.isNaN(amount) || amount > req.session.account.bitbars || amount < 1) {
@@ -250,11 +258,11 @@ router.post('/post_transfer', asyncMiddleware(async(req, res, next) => {
 
     req.session.account.bitbars -= amount;
     req.session = signSession(req.session);
-    query = `UPDATE Users SET bitbars = "${req.session.account.bitbars}" WHERE username == "${req.session.account.username}";`;
-    await db.exec(query);
+    query = `UPDATE Users SET bitbars = $bitbars WHERE username == $user;`;
+    await db.run(query, {$bitbars: req.session.account.bitbars, $user: req.session.account.username});
     const receiverNewBal = receiver.bitbars + amount;
-    query = `UPDATE Users SET bitbars = "${receiverNewBal}" WHERE username == "${receiver.username}";`;
-    await db.exec(query);
+    query = `UPDATE Users SET bitbars = $newbal WHERE username == $user;`;
+    await db.run(query, {$newbal: receiverNewBal, $user: receiver.username});
     render(req, res, next, 'transfer/success', 'Transfer Complete', false, {receiver, amount});
   } else { // user does not exist
     render(req, res, next, 'transfer/form', 'Transfer Bitbars', 'This user does not exist!', {receiver:null, amount:null, token: generateTransactionToken(req.session)});
