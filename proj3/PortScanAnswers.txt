@@ -1,0 +1,13 @@
+1. nmap -sS -A -T4 -p- -r scanme.nmap.org
+2. 45.33.32.156
+3.
+---------------------------------------
+|| Open Port | Application           ||
+---------------------------------------
+|| 22				 | ssh	(OpenSSH) 			 ||
+|| 80        | http (Apache httpd)   ||
+|| 9929      | nping-echo            ||
+|| 31337     | tcpwrapped            ||
+---------------------------------------
+4. Apache httpd 2.4.7 ((Ubuntu)), running on port 80.
+

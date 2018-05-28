@@ -1,0 +1,3 @@
+1. If the server responds with a RST/ACK packet, wireshark classifies the port as closed. This means the server is not accepting connections.
+2. If the server does not respond (with any packet), wireshark classifies the port as filtered. The probes sent by wirreshard are unable to connect.
+3. TODO

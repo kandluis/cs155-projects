@@ -69,6 +69,10 @@ proj1/fuzz/install/*
 proj1/fuzz/libarchive-3.1.2/*
 proj1/fuzz/results/*
 
+# Project 3 data
+proj3/trace.txt
+*.pcapng
+
 # Tex files.
 *.aux
 *.fdb_latexmk

