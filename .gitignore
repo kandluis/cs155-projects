@@ -80,3 +80,7 @@ proj3/trace.txt
 *.log
 *.pdf
 *.synctex.gz
+
+# Ignore notebooks
+*.ipynb
+*.dmg

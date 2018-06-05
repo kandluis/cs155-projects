@@ -1,0 +1,4 @@
+1. <sudo nmap -sS -A -T4 -p- -r scanme.nmap.org>
+2. <45.33.32.156>
+3. <22>: <ssh>, <80>: <http>, <9929>: <nping-echo>, <31337>: <ssl/ncat-chat>
+4. SOFTWARE=<Apache httpd>, VERSION=<2.4.7>, PORTS=<80>
