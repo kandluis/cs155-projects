@@ -66,7 +66,7 @@ class TestAddressMethods(unittest.TestCase):
       IPAddress('te.te.tx.tx.4')
 
 
-class Protocol(object)
+class Protocol(object):
   OPEN_PAREN = "("
   CLOSE_PAREN = ")"
   TCP_TOKEN = 'TCP'
@@ -129,7 +129,7 @@ class TestProtocolMethods(unittest.TestCase):
       Protocol('TCP 6')
 
 
-def getList(flags_string)
+def getList(flags_string):
   OPEN_LIST = "["
   CLOSE_LIST = "]"
   LIST_SEP = ","
@@ -225,7 +225,7 @@ class TestDatagramHeader(unittest.TestCase):
     self.assertEqual(header.length, 88)
 
 
-class IPPacket(object)
+class IPPacket(object):
   START_TOKEN = "IP"
   OPEN_PAREN = "("
   CLOSE_PAREN = ")"
@@ -373,7 +373,7 @@ def runTests():
 
 
 def loadPackets():
-  FILENAME = os.path.join("part3", "trace.txt")
+  FILENAME = os.path.join("trace.txt")
   packets = []
   IP6 = []
   ARP = []
@@ -435,8 +435,6 @@ def containsTCPHandshake(ps):
   return shakes if len(shakes[-1]) == 3 else shakes[:-1]
 
 
-runTests()
-
 # My cell phone IP.
 CELL_IP = "10.30.22.101"
 
@@ -459,7 +457,7 @@ def q1():
     if len(res) > 0:
       tcp_shakes[server] = res
   print("Five top visited websites as determined by completed TCP handshake "
-        "%s" % tcp_shakes.keys()[: 5])
+        "%s" % list(tcp_shakes.keys())[:5])
 
 
 # 3. Find all (sc,dst) pair packets that are SYN packets and count them
@@ -499,7 +497,7 @@ def q4():
   lines = []
   full_packets = []
   full_lines = []
-  with open(FILENAME) as f:
+  with open("trace.txt") as f:
     data = None
     typ = "IP"
     for line in f.readlines():
@@ -537,3 +535,14 @@ def q4():
       dup_lines.append(
           (full_lines[lines.index(line)], full_lines[i]))
   print("Duplicate lines: %s", dup_lines)
+
+
+def runQuestions():
+  q1()
+  q2()
+  q3()
+  q4()
+
+
+runTests()
+runQuestions()
