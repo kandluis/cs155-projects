@@ -1,0 +1,129 @@
+127.0.0.3
+<------- Result of GET /login  --------->
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.3 Python/2.7.6
+Date: Thu, 07 Jun 2018 16:31:24 GMT
+Content-type: text/html
+<html><head><title>Login Page!</title></head><body><p><h1>This is the login page. Please login.</h1></p></body></html
+<-----=============================----->
+<------ Result of POST /post_login ----->
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.3 Python/2.7.6
+Date: Thu, 07 Jun 2018 16:31:24 GMT
+Set-cookie: cookie=supersecretcoookie
+
+<------============================----->
+Did GET /download_file
+Network Working Group                                          R. Arends
+Request for Comments: 4033                          Telematica Instituut
+Obsoletes: 2535, 3008, 3090, 3445, 3655, 3658,                R. Austein
+           3755, 3757, 3845                                          ISC
+Updates: 1034, 1035, 2136, 2181, 2308, 3225,                   M. Larson
+         3007, 3597, 3226                                       VeriSign
+Category: Standards Track                                      D. Massey
+                                               Colorado State University
+                                                                 S. Rose
+                                                                    NIST
+                                                              March 2005
+
+
+               DNS Security Introduction and Requirements
+
+Status of This Memo
+
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+Copyright Notice
+
+   Copyright (C) The Internet Society (2005).
+
+Abstract
+
+   The Domain Name System Security Extensions (DNSSEC) add data origin
+   authentication and data integrity to the Domain Name System.  This
+   document introduces these extensions and describes their capabilities
+   and limitations.  This document also discusses the services that the
+   DNS security extensions do and do not provide.  Last, this document
+   describes the interrelationships between the documents that
+   collectively describe DNSSEC.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Arends, et al.              Standards Track                     [Page 1]
+
+RFC 4033       DNS Security Introduction and Requirements     March 2005
+
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Definitions of Important DNSSEC Terms  . . . . . . . . . . .   3
+   3.  Services Provided by DNS Security  . . . . . . . . . . . . .   7
+       3.1.  Data Origin Authentication and Data Integrity  . . . .   7
+       3.2.  Authenticating Name and Type Non-Existence . . . . . .   9
+   4.  Services Not Provided by DNS Security  . . . . . . . . . . .   9
+   5.  Scope of the DNSSEC Document Set and Last Hop Issues . . . .   9
+   6.  Resolver Considerations  . . . . . . . . . . . . . . . . . .  10
+   7.  Stub Resolver Considerations . . . . . . . . . . . . . . . .  11
+   8.  Zone Considerations  . . . . . . . . . . . . . . . . . . . .  12
+       8.1.  TTL Values vs. RRSIG Validity Period . . . . . . . . .  13
+       8.2.  New Temporal Dependency Issues for Zones . . . . . . .  13
+   9.  Name Server Considerations . . . . . . . . . . . . . . . . .  13
+   10. DNS Security Document Family . . . . . . . . . . . . . . . .  14
+   11. IANA Considerations  . . . . . . . . . . . . . . . . . . . .  15
+   12. Security Considerations  . . . . . . . . . . . . . . . . . .  15
+   13. Acknowledgements . . . . . . . . . . . . . . . . . . . . . .  17
+   14. References . . . . . . . . . . . . . . . . . . . . . . . . .  17
+       14.1. Normative References . . . . . . . . . . . . . . . . .  17
+       14.2. Informative References . . . . . . . . . . . . . . . .  18
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . .  20
+   Full Copyright Statement . . . . . . . . . . . . . . . . . . . .  21
+
+1.  Introduction
+
+   This document introduces the Domain Name System Security Extensions
+   (DNSSEC).  This document and its two companion documents ([RFC4034]
+   and [RFC4035]) update, clarify, and refine the security extensions
+   defined in [RFC2535] and its predecessors.  These security extensions
+   consist of a set of new resource record types and modifications to
+   the existing DNS protocol ([RFC1035]).  The new records and protocol
+   modifications are not fully described in this document, but are
+   described in a family of documents outlined in Section 10.  Sections
+   3 and 4 describe the capabilities and limitations of the security
+   extensions in greater detail.  Section 5 discusses the scope of the
+   document set.  Sections 6, 7, 8, and 9 discuss the effect that these
+   security extensions will have on resolvers, stub resolvers, zones,
+   and name servers.
+
+   This document and its two companions obsolete [RFC2535], [RFC3008],
+   [RFC3090], [RFC3445], [RFC3655], [RFC3658], [RFC3755], [RFC3757], and
+   [RFC3845].  This document set also updates but does not obsolete
+   [RFC1034], [RFC1035], [RFC2136], [RFC2181], [RFC2308], [RFC3225],
+   [RFC3007], [RFC3597], and the portions of [RFC3226] that deal with
+   DNSSEC.
+File saved to lib/downloadedPage.txt
+<------ Result of POST /post_logout ----->
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.3 Python/2.7.6
+Date: Thu, 07 Jun 2018 16:31:24 GMT
+Content-type: text/html
+<html><head><title>Logout Page!</title></head><body><p><h1>You have been logged out!</h1></p></body></html
+<------============================----->
+
+Client done!
